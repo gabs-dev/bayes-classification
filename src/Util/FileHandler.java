@@ -18,7 +18,7 @@ public class FileHandler {
 
         List<String> data = reader(fileName);
 
-        return DatabaseFormatter.formatDatabase(data, baseType);
+        return DatabaseHandler.formatDatabase(data, baseType);
     }
 
     public static void createFile(String fileName, String baseClassification) {

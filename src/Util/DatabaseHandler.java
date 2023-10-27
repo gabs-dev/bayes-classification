@@ -4,9 +4,10 @@ import Model.Data;
 
 import java.util.*;
 
-public class DatabaseFormatter {
+public class DatabaseHandler {
 
     private static List<String> acceptedEntries = Arrays.asList("8", "9", "10");
+    public static List<Integer> typesOfClasses = Arrays.asList(1, 2, 3);
 
     public static List<Data> formatDatabase(List<String> base, String baseType) {
         List<Data> formattedBase = new LinkedList<>();
@@ -37,13 +38,43 @@ public class DatabaseFormatter {
         for (String entry : acceptedEntries)
             base.addAll(FileHandler.loadFile(entry));
 
-        normalize(base);
-
         splitBase(base, trainingBase, testBase);
+    }
+
+    /**
+     * Obtém uma lista de objetos Data filtrados por um valor de classe específico.
+     *
+     * @param base A lista de objetos Data a ser filtrada.
+     * @param classType O valor da classe usado como critério de filtro.
+     * @return Uma lista de objetos Data que pertencem à classe especificada.
+     */
+    public static List<Data> getBaseByClass(List<Data> base, int classType) {
+        return base.stream()
+                .filter(x -> x.getOutput() == classType)
+                .toList();
+    }
+
+    /**
+     * Retorna um vetor contendo um conjunto específico de amostras.
+     *
+     * @param base Lista de objetos Data a partir do qual o valores serão extraídos.
+     * @param sampleNumber O índice da amostra desejada a ser extraída de cada objeto Data.
+     * @return Um array de valores double que contém as amostras extraídas.
+     */
+    public static double[] getSamples(List<Data> base, int sampleNumber) {
+        double[] samples = new double[base.size()];
+
+        for (int i = 0; i < samples.length; i++) {
+            samples[i] = base.get(i).getInput()[sampleNumber];
+        }
+
+        return samples;
     }
 
     private static void splitBase(List<Data> base, List<Data> trainingBase, List<Data> testBase) {
         int size = (int) (base.size() * 0.7);
+
+        Collections.shuffle(base);
 
         for (int i = 0; i < base.size(); i++) {
             if (i < size)
@@ -51,6 +82,9 @@ public class DatabaseFormatter {
             else
                 testBase.add(base.get(i));
         }
+
+        sortBase(trainingBase);
+        sortBase(testBase);
     }
 
     private static double classifySex(String sex) {
@@ -75,35 +109,12 @@ public class DatabaseFormatter {
         return 0;
     }
 
-    private static void normalize(List<Data> base) {
-        List<Data> normalizedData = new LinkedList<>();
-        double[] minInput = new double[base.get(0).getInput().length];
-        double[] maxInput = new double[base.get(0).getInput().length];
-
-        for (int i = 0; i < minInput.length; i++) {
-            minInput[i] = base.get(0).getInput()[i];
-            maxInput[i] = base.get(0).getInput()[i];
-        }
-
-        for(int i = 1; i < base.size(); i++){
-            for (int j = 0; j < maxInput.length; j++) {
-                if(base.get(i).getInput()[j] > maxInput[j]) maxInput[j] = base.get(i).getInput()[j];
-
-                if(base.get(i).getInput()[j] < minInput[j]) minInput[j] = base.get(i).getInput()[j];
+    private static void sortBase(List<Data> base) {
+        Collections.sort(base, new Comparator<Data>() {
+            @Override
+            public int compare(Data o1, Data o2) {
+                return Integer.compare(o1.getOutput(), o2.getOutput());
             }
-        }
-
-        for(int i = 0; i < base.size(); i++){
-            double[] newInput = new double[minInput.length];
-            for (int j = 0; j < maxInput.length; j++) {
-                newInput[j] = (base.get(i).getInput()[j] - minInput[j]) / (maxInput[j] - minInput[j]);
-            }
-            Data newData = new Data(newInput, base.get(i).getOutput());
-            normalizedData.add(newData);
-        }
-
-        base.clear();
-        base.addAll(normalizedData);
+        });
     }
-
 }
